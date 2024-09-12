@@ -1,11 +1,8 @@
-bf-main: main.c
-	gcc -O2 -obf-main main.c
+bf-main: main.c preprocess.h preprocess.c
+	gcc -O2 -obf-main main.c preprocess.c
 
 run: bf-main m.bf
 	./bf-main
-
-time: bf-main m.bf
-	time ./bf-main
 
 clean:
 	rm bf-main

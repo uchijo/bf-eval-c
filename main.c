@@ -2,37 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-// enum for the instructions
-enum Instruction {
-    INC_PTR,
-    DEC_PTR,
-    INC_VAL,
-    DEC_VAL,
-    OUTPUT,
-    INPUT,
-    JUMP_FORWARD,
-    JUMP_BACKWARD
-};
+#include "preprocess.h"
 
-// struct for virtual instruction
-struct VirtualInstruction {
-    enum Instruction instruction;
-    int data;
-};
-
-int *cacheJumpDest(char *src) {
-    int src_length = strlen(src);
-	int *jumpDest = calloc(src_length, sizeof(int));
-	// for pc, c := range src {
-	for (int i=0; i<src_length; i++) {
-		if (src[i] == '[') {
+int *cacheJumpDest(virtual_instr *src, int length) {
+	int *jumpDest = calloc(length, sizeof(int));
+	for (int i=0; i<length; i++) {
+		if (src[i].instr == JUMP_FORWARD) {
 			int start = i;
 			int nest = 1;
 			for (;;) {
 				start++;
-				if (src[start] == '[') {
+				if (src[start].instr == JUMP_FORWARD) {
 					nest++;
-				} else if (src[start]== ']') {
+				} else if (src[start].instr == JUMP_BACKWARD) {
 					nest--;
 					if (nest == 0) {
 						break;
@@ -42,14 +24,14 @@ int *cacheJumpDest(char *src) {
 				}
 			}
 			jumpDest[i] = start;
-		} else if (src[i] == ']') {
+		} else if (src[i].instr == JUMP_BACKWARD) {
 			int start = i;
 			int nest = 1;
 			for (;;) {
 				start--;
-				if (src[start] == ']') {
+				if (src[start].instr == JUMP_BACKWARD) {
 					nest++;
-				} else if (src[start] == '[') {
+				} else if (src[start].instr == JUMP_FORWARD) {
 					nest--;
 					if (nest == 0) {
 						break;
@@ -88,50 +70,47 @@ int main() {
     }
     buffer[i] = '\0';
 
-    // printf("%s\n", buffer);
+    virtual_instr_node *parsed = parse(buffer);
+    pack_instr(parsed);
+    virtual_instr *instr_array = to_array(parsed);
 
     int pc = 0;
     int pointer = 15000;
     int mem[30000];
-    int instructions = strlen(buffer);
-    int *jump_dest = cacheJumpDest(buffer);
-    // for (int i=0; i<30000; i++) {
-    //     printf("mem %d: %d\n", i, mem[i]);
-    // }
-    // printf("mem %d: %d\n", pointer, mem[pointer]);
-    // printf("jump_dest for %d: %d\n", pc, jump_dest[pc]);
-    // return 0;
+    int length = len(parsed);
+    int *jump_dest = cacheJumpDest(instr_array, length);
     for (;;) {
-        // printf("current instr: %d, %c\n", pc, buffer[pc]);
-        // printf("pointer: %d, mem: %d\n", pointer, mem[pointer]);
-        if (pc >= instructions) {
+        if (pc >= length) {
             break;
         }
-        switch (buffer[pc]) {
-            case '>':
-                pointer++;
+        switch (instr_array[pc].instr) {
+            case INC_PTR:
+                pointer += instr_array[pc].data;
                 break;
-            case '<':
-                pointer--;
+            case DEC_PTR:
+                pointer -= instr_array[pc].data;
                 break;
-            case '+':
-                mem[pointer]++;
+            case INC_VAL:
+                mem[pointer] += instr_array[pc].data;
                 break;
-            case '-':
-                mem[pointer]--;
+            case DEC_VAL:
+                mem[pointer] -= instr_array[pc].data;
                 break;
-            case '.':
+            case OUTPUT:
                 printf("%c", mem[pointer]);
                 break;
-            case '[':
+            case JUMP_FORWARD:
                 if (mem[pointer] == 0) {
                     pc = jump_dest[pc];
                 }
                 break;
-            case ']':
+            case JUMP_BACKWARD:
                 if (mem[pointer] != 0) {
                     pc = jump_dest[pc];
                 }
+                break;
+            case INPUT:
+                mem[pointer] = getchar();
                 break;
         }
         pc++;
