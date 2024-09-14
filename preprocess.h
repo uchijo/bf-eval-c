@@ -10,7 +10,8 @@ enum instr {
   OUTPUT,
   INPUT,
   JUMP_FORWARD,
-  JUMP_BACKWARD
+  JUMP_BACKWARD,
+  ZERO_RESET
 };
 
 typedef struct virtual_instr_node {
@@ -27,6 +28,7 @@ typedef struct {
 virtual_instr_node *parse(char *input);
 void print_virtual_instr(virtual_instr_node *head);
 void pack_instr(virtual_instr_node *head);
+void apply_zero_reset(virtual_instr_node *head);
 virtual_instr *to_array(virtual_instr_node *head);
 int len(virtual_instr_node *head);
 

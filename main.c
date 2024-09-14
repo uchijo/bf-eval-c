@@ -73,6 +73,7 @@ int main() {
 
   virtual_instr_node *parsed = parse(buffer);
   pack_instr(parsed);
+  apply_zero_reset(parsed);
   virtual_instr *instr_array = to_array(parsed);
 
   int pc = 0;
@@ -81,9 +82,15 @@ int main() {
   int length = len(parsed);
   int *jump_dest = cacheJumpDest(instr_array, length);
   static void *labels[] = {
-      &&l_inc_ptr, &&l_dec_ptr, &&l_inc_val,      &&l_dec_val,
-      &&l_output,  &&l_input,   &&l_jump_forward, &&l_jump_backward,
+      &&l_inc_ptr,      &&l_dec_ptr,       &&l_inc_val,
+      &&l_dec_val,      &&l_output,        &&l_input,
+      &&l_jump_forward, &&l_jump_backward, &&l_zero_reset,
   };
+
+  static void *jmp_table[30000];
+  for (int i = 0; i < length; i++) {
+    jmp_table[i] = labels[instr_array[i].instr];
+  }
 
   goto *labels[instr_array[pc].instr];
 
@@ -92,31 +99,31 @@ l_inc_ptr:
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_dec_ptr:
   pointer -= instr_array[pc].data;
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_inc_val:
   mem[pointer] += instr_array[pc].data;
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_dec_val:
   mem[pointer] -= instr_array[pc].data;
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_output:
   printf("%c", mem[pointer]);
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_jump_forward:
   if (mem[pointer] == 0) {
     pc = jump_dest[pc];
@@ -124,7 +131,7 @@ l_jump_forward:
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_jump_backward:
   if (mem[pointer] != 0) {
     pc = jump_dest[pc];
@@ -132,13 +139,19 @@ l_jump_backward:
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
 l_input:
   mem[pointer] = getchar();
   if (++pc >= length) {
     goto exit;
   }
-  goto *labels[instr_array[pc].instr];
+  goto *jmp_table[pc];
+l_zero_reset:
+  mem[pointer] = 0;
+  if (++pc >= length) {
+    goto exit;
+  }
+  goto *jmp_table[pc];
 
 exit:
   return 0;
