@@ -89,36 +89,31 @@ int main() {
 
 l_inc_ptr:
   pointer += instr_array[pc].data;
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
 l_dec_ptr:
   pointer -= instr_array[pc].data;
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
 l_inc_val:
   mem[pointer] += instr_array[pc].data;
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
 l_dec_val:
   mem[pointer] -= instr_array[pc].data;
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
 l_output:
   printf("%c", mem[pointer]);
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
@@ -126,8 +121,7 @@ l_jump_forward:
   if (mem[pointer] == 0) {
     pc = jump_dest[pc];
   }
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
@@ -135,15 +129,13 @@ l_jump_backward:
   if (mem[pointer] != 0) {
     pc = jump_dest[pc];
   }
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
 l_input:
   mem[pointer] = getchar();
-  pc++;
-  if (pc >= length) {
+  if (++pc >= length) {
     goto exit;
   }
   goto *labels[instr_array[pc].instr];
